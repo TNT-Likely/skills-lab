@@ -23,7 +23,7 @@ python3 -m http.server 8792 --directory examples
 
 ```bash
 mkdir -p ~/.codex/skills/flow-builder
-curl -L https://raw.githubusercontent.com/superzcj/skills-lab/main/skills/flow-builder/SKILL.md \
+curl -L https://raw.githubusercontent.com/tnt-likely/skills-lab/main/skills/flow-builder/SKILL.md \
   -o ~/.codex/skills/flow-builder/SKILL.md
 ```
 
@@ -32,7 +32,7 @@ curl -L https://raw.githubusercontent.com/superzcj/skills-lab/main/skills/flow-b
 Copy `skills/flow-builder/` into the runtime's skills directory, or add its `SKILL.md` to the agent's skill search path:
 
 ```bash
-git clone https://github.com/superzcj/skills-lab.git
+git clone https://github.com/tnt-likely/skills-lab.git
 cp -R skills-lab/skills/flow-builder ~/.agents/skills/flow-builder
 ```
 

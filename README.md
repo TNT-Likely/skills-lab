@@ -23,7 +23,7 @@ python3 -m http.server 8792 --directory examples
 
 ```bash
 mkdir -p ~/.codex/skills/flow-builder
-curl -L https://raw.githubusercontent.com/superzcj/skills-lab/main/skills/flow-builder/SKILL.md \
+curl -L https://raw.githubusercontent.com/tnt-likely/skills-lab/main/skills/flow-builder/SKILL.md \
   -o ~/.codex/skills/flow-builder/SKILL.md
 ```
 
@@ -32,7 +32,7 @@ curl -L https://raw.githubusercontent.com/superzcj/skills-lab/main/skills/flow-b
 把 `skills/flow-builder/` 复制到该 Agent 的 skills 目录，或直接把其中的 `SKILL.md` 加入 Agent 的技能搜索路径：
 
 ```bash
-git clone https://github.com/superzcj/skills-lab.git
+git clone https://github.com/tnt-likely/skills-lab.git
 cp -R skills-lab/skills/flow-builder ~/.agents/skills/flow-builder
 ```
 
