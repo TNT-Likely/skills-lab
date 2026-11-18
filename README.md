@@ -10,6 +10,8 @@
 
 [`examples/mfg-procurement-to-assembly.html`](examples/mfg-procurement-to-assembly.html) 是一个脱敏的制造流程示例，展示零部件从采购、到货、质检、入库、领料、装配绑定、下线放行、交付到售后反查的交互式图表。它只使用合成业务数据，不包含飞书地址、访问令牌或内部路径。
 
+[`examples/mfg-vcu-after-sales-replacement.html`](examples/mfg-vcu-after-sales-replacement.html) 是一个更小的纵向切片，专门演示售后 VCU 换件：飞书任务、VIN/旧件查询、新件校验、UDS/蓝牙写入、读回、Melon 换件事务、任务回写和反向追溯。配套的 [中文实施计划](examples/mfg-vcu-after-sales-implementation-plan.md) 和 [English plan](examples/mfg-vcu-after-sales-implementation-plan.en.md) 说明了职责边界、接口顺序、数据主权、迁移路径和验收矩阵。
+
 本地预览：
 
 ```bash

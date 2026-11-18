@@ -12,6 +12,9 @@ required = [
     ROOT / "skills/flow-builder/SKILL.md",
     ROOT / "examples/demo.gif",
     ROOT / "examples/mfg-procurement-to-assembly.html",
+    ROOT / "examples/mfg-vcu-after-sales-replacement.html",
+    ROOT / "examples/mfg-vcu-after-sales-implementation-plan.md",
+    ROOT / "examples/mfg-vcu-after-sales-implementation-plan.en.md",
     ROOT / "LICENSE",
 ]
 missing = [str(p.relative_to(ROOT)) for p in required if not p.exists()]
@@ -40,5 +43,17 @@ if not re.search(r"售后|服务|维修|换件|反查", html):
 for forbidden in ("bytedance.larkoffice.com", "feishu.cn", "/Users/zcj/", "TL4Ebo3q"):
     if forbidden in html:
         raise SystemExit(f"private material found: {forbidden}")
+
+vcu_html = (ROOT / "examples/mfg-vcu-after-sales-replacement.html").read_text(encoding="utf-8")
+vcu_plan = (ROOT / "examples/mfg-vcu-after-sales-implementation-plan.md").read_text(encoding="utf-8")
+for marker in ("执行成功换件", "模拟校验失败", "反向追溯", "Melon", "飞书", "UDS", "READBACK", "idempotency"):
+    if marker not in vcu_html and marker not in vcu_plan:
+        raise SystemExit(f"VCU example missing marker: {marker}")
+for forbidden in ("bytedance.larkoffice.com", "feishu.cn", "/Users/zcj/", "TL4Ebo3q"):
+    if forbidden in vcu_html or forbidden in vcu_plan:
+        raise SystemExit(f"private material found in VCU example: {forbidden}")
+vcu_nodes = len(__import__("re").findall(r'data-node-id="', vcu_html))
+if vcu_nodes < 10:
+    raise SystemExit(f"expected at least 10 VCU flow nodes, found {vcu_nodes}")
 
 print(f"validated {len(nodes)} nodes, {len(edges)} edges, required files present")

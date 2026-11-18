@@ -10,6 +10,8 @@ The first skill is [`flow-builder`](skills/flow-builder/SKILL.md). It helps an a
 
 [`examples/mfg-procurement-to-assembly.html`](examples/mfg-procurement-to-assembly.html) is a sanitized manufacturing example. It shows a component moving through purchasing, receipt, inspection, inventory, picking, installation binding, release, delivery, service lookup, and replacement trace. It uses synthetic data only and contains no private Feishu URL, token, or local path.
 
+[`examples/mfg-vcu-after-sales-replacement.html`](examples/mfg-vcu-after-sales-replacement.html) is a smaller vertical slice for an after-sales VCU replacement. It covers the Feishu task, VIN and old-part lookup, new-part validation, UDS/BLE write, readback, the Melon replacement transaction, task callback, and reverse trace. The [Chinese implementation plan](examples/mfg-vcu-after-sales-implementation-plan.md) and [English plan](examples/mfg-vcu-after-sales-implementation-plan.en.md) describe ownership, API order, data authority, migration, and acceptance cases.
+
 Preview locally:
 
 ```bash
