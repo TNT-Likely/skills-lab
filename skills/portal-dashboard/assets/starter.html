@@ -1,0 +1,427 @@
+<!doctype html>
+<!--
+  portal-dashboard 起步模板（Clash 面板风文档优先门户）
+  · 零外部依赖，file:// 直开可用
+  · 接入真实数据：替换下方 <script> 顶部的 DOCS / TOOLS / SERVICES / GIT / LINK_BASE / TOOL_BASE
+  · 设计令牌与规范见同目录 SKILL.md；采样记录见 references/measurements.md
+-->
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>portal-dashboard · starter</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg:#f2f0f3; --card:#fcf9fa; --line:#e8e6e8; --soft:#f2f0f3;
+    --ink:#1d1d1f; --dim:#8a8a8e; --blue:#0091ff; --blue-soft:#e7f1ff;
+    --green:#34c759; --green-soft:#a1f7a1; --amber:#ff9f0a; --red:#ff3b30;
+    --shadow:0 1px 2px rgba(20,20,30,.035);
+    --r:20px; --r-sm:14px;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg:#0e0f12; --card:#17181c; --line:#2a2c31; --soft:#22242a;
+    --ink:#f2f2f7; --dim:#8e8e93; --blue:#0a84ff; --blue-soft:#10233c;
+    --green:#30d158; --green-soft:#1f4d2a; --amber:#ff9f0a; --red:#ff453a;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg:#0e0f12; --card:#17181c; --line:#2a2c31; --soft:#22242a;
+    --ink:#f2f2f7; --dim:#8e8e93; --blue:#0a84ff; --blue-soft:#10233c;
+    --green:#30d158; --green-soft:#1f4d2a; --amber:#ff9f0a; --red:#ff453a;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+    }
+  }
+  * { box-sizing:border-box; margin:0; }
+  body { font:13px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",system-ui,sans-serif;
+    color:var(--ink); background:var(--bg); }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
+  .wrap { max-width:1440px; margin:0 auto; padding:28px 32px 56px; }
+
+  /* header */
+  .top { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+  .brand { display:flex; align-items:center; gap:12px; }
+  .logo { width:42px; height:42px; border-radius:13px; background:var(--blue); color:#fff;
+    display:grid; place-items:center; font-weight:800; font-size:15px; letter-spacing:-.5px;
+    box-shadow:0 6px 18px rgba(0,145,255,.22); }
+  h1 { font-size:26px; font-weight:700; letter-spacing:-.7px; }
+  .sub { color:var(--dim); font-size:12.5px; margin-top:2px; }
+  .search { margin-left:auto; display:flex; align-items:center; gap:9px; width:380px; max-width:40vw;
+    background:var(--card); border:1px solid var(--line); border-radius:999px; padding:11px 16px;
+    box-shadow:var(--shadow); }
+  .search svg { width:16px; height:16px; color:var(--dim); flex:0 0 auto; }
+  .search input { border:0; background:transparent; outline:none; width:100%; font:13.5px inherit; color:var(--ink); }
+  .search input::placeholder { color:var(--dim); }
+  .mode-btn { width:44px; height:44px; border-radius:50%; border:1px solid var(--line); cursor:pointer;
+    background:var(--card); color:var(--ink); font-size:19px; display:grid; place-items:center;
+    box-shadow:var(--shadow); transition:transform .15s, border-color .15s; }
+  .mode-btn:hover { transform:scale(1.05); border-color:var(--blue); }
+
+  /* compact stats */
+  .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px; }
+  .stat { background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px 16px; }
+  .stat b { display:block; font-size:24px; font-weight:700; letter-spacing:-.8px; font-variant-numeric:tabular-nums; }
+  .stat span { color:var(--dim); font-size:11.5px; }
+  .stat.green b { color:var(--green); }
+  .stat.blue b { color:var(--blue); }
+
+  /* service strip */
+  .services { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 18px; }
+  .services .label { color:var(--dim); font-size:11.5px; margin-right:2px; }
+  .svc { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 11px;
+    background:var(--card); border:1px solid var(--line); color:var(--dim); font-size:11.5px; cursor:pointer; }
+  .svc .dot { width:7px; height:7px; border-radius:50%; background:var(--green); }
+  .svc.off .dot { background:#c9c7cc; }
+  html[data-theme="dark"] .svc.off .dot { background:#4a4d55; }
+  .svc.up { color:var(--ink); }
+  .svc:hover { border-color:var(--blue); }
+
+  /* toolbar */
+  .toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+  .chips { display:flex; gap:7px; flex-wrap:wrap; }
+  .chips button { border:1px solid var(--line); background:var(--card); border-radius:999px; font:12.5px inherit;
+    padding:5px 14px; color:var(--dim); cursor:pointer; }
+  .chips button.on { background:var(--blue); border-color:var(--blue); color:#fff; font-weight:600; }
+  .chips button .n { opacity:.7; font-size:10.5px; margin-left:4px; }
+  .toolbar .right { margin-left:auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .toggle { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:12px; cursor:pointer; }
+  .switch { width:40px; height:24px; border-radius:999px; border:0; cursor:pointer; background:#d8d5da;
+    position:relative; transition:background .15s; flex:0 0 auto; }
+  html[data-theme="dark"] .switch { background:#3a3d44; }
+  .switch::after { content:""; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%;
+    background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:transform .15s; }
+  .switch.on { background:var(--blue); }
+  .switch.on::after { transform:translateX(16px); }
+
+  /* area sections */
+  .area { margin-top:26px; }
+  .area-head { display:flex; align-items:center; gap:10px; padding-bottom:9px; border-bottom:1px solid var(--line);
+    margin-bottom:12px; }
+  .area-dot { width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
+  .area-head h2 { font-size:18px; font-weight:700; letter-spacing:-.3px; }
+  .area-head .n { color:var(--dim); font-size:11.5px; }
+  .area-head .link { margin-left:auto; color:var(--blue); text-decoration:none; font-size:11.5px; }
+  .area-head .link:hover { text-decoration:underline; }
+  .doc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
+  .doc-card { display:flex; flex-direction:column; min-height:132px; padding:14px 16px; border-radius:16px;
+    background:var(--card); border:1px solid transparent; box-shadow:var(--shadow); text-decoration:none;
+    color:var(--ink); transition:transform .14s, border-color .14s; }
+  .doc-card:hover { transform:translateY(-2px); border-color:var(--blue); }
+  .doc-top { display:flex; align-items:center; gap:6px; }
+  .badge { display:inline-block; border-radius:999px; padding:2px 8px; font-size:10.5px; }
+  .badge.green { background:#e7f9ec; color:#1a8f3a; }
+  html[data-theme="dark"] .badge.green { background:#123522; color:var(--green); }
+  .badge.gray { background:var(--soft); color:var(--dim); }
+  .badge.amber { background:#fff4e0; color:#b26a00; }
+  html[data-theme="dark"] .badge.amber { background:#3a2a10; color:var(--amber); }
+  .type { margin-left:auto; font-family:ui-monospace,monospace; font-size:9.5px; color:var(--dim); }
+  .doc-title { font-size:14px; font-weight:600; margin-top:9px; line-height:1.4; }
+  .doc-desc { color:var(--dim); font-size:12px; margin-top:4px; line-height:1.5;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .doc-foot { display:flex; justify-content:space-between; color:var(--dim); font-size:10.5px; margin-top:auto;
+    padding-top:10px; }
+  .doc-card.index { border-style:dashed; border-color:var(--line); background:transparent; box-shadow:none; }
+  .doc-card.index:hover { border-color:var(--blue); background:var(--card); }
+  .doc-card.index .doc-title { color:var(--dim); font-weight:500; }
+
+  /* tools */
+  .tools { margin-top:34px; }
+  .tool-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  .tool-card { display:flex; flex-direction:column; gap:6px; padding:12px 14px; border-radius:16px;
+    background:var(--card); border:1px solid transparent; box-shadow:var(--shadow); }
+  .tool-card:hover { border-color:var(--blue); }
+  .tool-top { display:flex; align-items:center; gap:8px; }
+  .tool-top .avatar { width:30px; height:30px; border-radius:50%; background:var(--blue-soft); color:var(--blue);
+    display:grid; place-items:center; font-weight:700; font-size:12px; flex:0 0 auto; }
+  .tool-top b { font-size:13px; font-weight:600; }
+  .tool-top .tag { margin-left:auto; background:var(--soft); color:var(--dim); border-radius:6px;
+    padding:1px 6px; font-size:9.5px; }
+  .tool-desc { color:var(--dim); font-size:11.5px; line-height:1.45;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .tool-foot { display:flex; align-items:center; gap:7px; margin-top:auto; }
+  .tool-foot code { font-family:ui-monospace,monospace; font-size:10.5px; color:var(--blue);
+    background:var(--blue-soft); border-radius:6px; padding:2px 7px; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; }
+  .tool-foot .copy { margin-left:auto; border:1px solid var(--line); background:transparent; color:var(--dim);
+    border-radius:6px; font-size:10px; padding:1px 7px; cursor:pointer; }
+  .tool-foot .open { color:var(--dim); background:none; border:0; cursor:pointer; font-size:13px; padding:0; }
+  .tool-foot .open:hover { color:var(--blue); }
+
+  .empty { color:var(--dim); padding:26px 4px; text-align:center; }
+  .foot { margin-top:38px; color:var(--dim); font-size:11.5px; border-top:1px solid var(--line); padding-top:13px;
+    display:flex; gap:12px; flex-wrap:wrap; }
+  .foot .right { margin-left:auto; }
+
+  .toast { position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(8px);
+    background:#1d1d1f; color:#fff; padding:10px 18px; border-radius:999px; font-size:12.5px;
+    opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; z-index:200; }
+  html[data-theme="dark"] .toast { background:#f2f2f7; color:#1d1d1f; }
+  .toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  @media (max-width:900px) {
+    .wrap { padding:20px 16px 48px; }
+    .search { width:100%; max-width:none; order:3; margin-left:0; }
+    .stats { grid-template-columns:repeat(2,1fr); }
+    .toolbar .right { margin-left:0; }
+  }
+  @media (max-width:680px) {
+    .doc-grid, .tool-grid { grid-template-columns:1fr; }
+    h1 { font-size:23px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
+</style></head><body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">PD</div>
+      <div><h1>门户仪表盘 · 起步模板</h1><div class="sub" id="sub">演示数据 · 文档优先门户</div></div>
+    </div>
+    <label class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" placeholder="搜索文档 / 工具…（/ 聚焦）" autocomplete="off">
+    </label>
+    <button class="mode-btn" id="modeBtn" title="自动（跟随系统）">🌓</button>
+  </header>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="services" id="services"><span class="label">服务</span></div>
+
+  <div class="toolbar">
+    <div class="chips" id="chips"></div>
+    <div class="right">
+      <label class="toggle"><button class="switch" id="curToggle"></button>只看当前</label>
+    </div>
+  </div>
+
+  <main id="areas"></main>
+  <section class="tools" id="tools">
+    <div class="area-head"><span class="area-dot" style="background:var(--blue)"></span><h2>工具与脚本</h2>
+      <span class="n" id="toolsN"></span><a class="link" href="#" id="moreTools">全部工具 →</a></div>
+    <div class="tool-grid" id="toolsGrid"></div>
+  </section>
+
+  <footer class="foot" id="foot"></footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ 演示数据：接入真实后端时整体替换以下常量 ============ */
+const DOCS = [
+  { rel: "README.md", title: "本地知识库", desc: "知识库总入口：区域地图、环境约定与常用命令一览。", cat: "总览", st: "当前", updated: "2026-11-18", search: "readme 入口 概览 地图 约定" },
+  { rel: "总览/快速上手.md", title: "快速上手", desc: "安装依赖、启动门户、打开页面的三步流程。", cat: "总览", st: "当前", updated: "2026-11-19", search: "入门 安装 启动 依赖" },
+  { rel: "开发与联调/README.md", title: "开发与联调", desc: "本区域索引：环境、调试工具与联调流程的入口清单。", cat: "开发与联调", st: "当前", updated: "2026-11-15", search: "开发 联调 索引 入口" },
+  { rel: "开发与联调/环境搭建手册.md", title: "环境搭建手册", desc: "本机开发环境清单：工具链版本、路径约定与初始化步骤。", cat: "开发与联调", st: "当前", updated: "2026-11-16", search: "环境 工具链 版本 初始化" },
+  { rel: "开发与联调/接口联调踩坑.md", title: "接口联调踩坑", desc: "常见联调问题：超时、签名、跨域与端口占用。", cat: "开发与联调", st: "当前", updated: "2026-11-14", search: "联调 超时 签名 跨域 端口" },
+  { rel: "开发与联调/模拟器使用说明.html", title: "模拟器使用说明", desc: "本地模拟器的启动、场景切换与日志导出。", cat: "开发与联调", st: "参考", updated: "2026-10-30", search: "模拟器 场景 日志 启动" },
+  { rel: "车辆通信/README.md", title: "车辆通信", desc: "本区域索引：诊断协议、报文格式与实车操作规范。", cat: "车辆通信", st: "当前", updated: "2026-11-12", search: "车辆 通信 索引 协议" },
+  { rel: "车辆通信/UDS 命令速查.md", title: "UDS 命令速查", desc: "常用诊断服务号与响应码的快速对照表。", cat: "车辆通信", st: "当前", updated: "2026-11-13", search: "uds 诊断 服务号 响应码" },
+  { rel: "车辆通信/报文日志解析.md", title: "报文日志解析", desc: "按帧头、长度、校验拆分日志的脚本思路（待评审）。", cat: "车辆通信", st: "候选", updated: "2026-11-10", search: "报文 日志 帧 校验 解析" },
+  { rel: "后端与数据/README.md", title: "后端与数据", desc: "本区域索引：BFF 约定、数据库与观测口径。", cat: "后端与数据", st: "当前", updated: "2026-11-11", search: "后端 数据 索引 数据库" },
+  { rel: "后端与数据/BFF 接口约定.md", title: "BFF 接口约定", desc: "路径、鉴权、错误码与分页的团队约定。", cat: "后端与数据", st: "当前", updated: "2026-11-09", search: "bff 接口 鉴权 错误码 分页" },
+  { rel: "后端与数据/数据库迁移记录.md", title: "数据库迁移记录", desc: "历次 schema 变更与回滚说明。", cat: "后端与数据", st: "参考", updated: "2026-10-28", search: "数据库 schema 迁移 回滚" },
+  { rel: "后端与数据/观测查询示例.md", title: "观测查询示例", desc: "按时间窗口聚合指标的手记草稿。", cat: "后端与数据", st: "草稿", updated: "2026-11-08", search: "观测 指标 聚合 查询" },
+  { rel: "运营后台/发布检查单.md", title: "发布检查单", desc: "发布前逐项勾选：体检、备份、回滚预案。", cat: "运营后台", st: "当前", updated: "2026-11-17", search: "发布 检查单 备份 回滚" },
+  { rel: "运营后台/权限配置说明.md", title: "权限配置说明", desc: "角色与页面权限的映射关系（新方案候选）。", cat: "运营后台", st: "候选", updated: "2026-11-07", search: "权限 角色 页面 配置" },
+  { rel: "会议纪要-2026-11.md", title: "会议纪要 2026-11", desc: "月度评审的要点记录，尚未归档到区域。", cat: "未分类", st: "参考", updated: "2026-11-05", search: "会议 纪要 评审" },
+];
+const TOOLS = [
+  { name: "门户服务", desc: "本地渲染知识库与工具面板，支持实时扫描与全文搜索。", cmd: "portal serve", file: "server/serve.ts", tag: "常驻", letter: "P" },
+  { name: "文档体检", desc: "校验 frontmatter、断链、绝对路径与密钥模式，作为提交门禁。", cmd: "portal check", file: "server/check.ts", tag: "门禁", letter: "C" },
+  { name: "离线入口生成", desc: "生成单文件入口页，内置全文搜索，离线可打开。", cmd: "portal build", file: "server/build.ts", tag: "生成", letter: "B" },
+  { name: "自动同步", desc: "体检通过后提交并推送远端；每日定时兜底。", cmd: "portal sync", file: "scripts/sync.sh", tag: "09:30", letter: "S" },
+  { name: "用量统计", desc: "余额快照差值推算月度用量，支持 JSON 输出。", cmd: "portal usage", file: "usage/usage.ts", tag: "CLI", letter: "U" },
+  { name: "全链路启动", desc: "模拟器、前端与本地后端一键拉起。", cmd: "portal all", file: "dev.sh", tag: "启动", letter: "A" },
+];
+const SERVICES = [
+  { name: "门户", port: 8800, up: true, known: true, url: "http://127.0.0.1:8800/" },
+  { name: "后端 BFF", port: 3000, up: true, known: true, url: "http://127.0.0.1:3000/" },
+  { name: "用量面板", port: 8801, up: false, known: true, url: "" },
+  { name: "模拟器", port: 8780, up: false, known: true, url: "" },
+];
+const SERVICES_KNOWN = true;
+const GIT = { last: "2026-11-20 09:30", files: 128, pending: 0 };
+const LINK_BASE = "";   // 接入后改为文档根 URL，如 "/docs/"
+const TOOL_BASE = "";   // 接入后改为工具源文件浏览 URL
+const AREA_ORDER = ["总览", "开发与联调", "车辆通信", "后端与数据", "运营后台", "未分类"];
+const AREA_COLOR = { "总览": "#8a8a8e", "开发与联调": "#ff9f0a", "车辆通信": "#34c759", "后端与数据": "#0091ff",
+  "运营后台": "#8b7ce8", "未分类": "#8a8a8e" };
+
+/* ============ 渲染逻辑（参考实现同款，最小改动） ============ */
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+const state = { q: "", cat: "全部", currentOnly: false };
+let toastTimer = null;
+
+function toast(msg) {
+  const el = $("toast"); el.textContent = msg; el.classList.add("on");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("on"), 1800);
+}
+const isIndex = (d) => d.rel === "README.md" || d.rel.endsWith("/README.md");
+const rank = (st) => st === "当前" ? 0 : st === "候选" ? 1 : 2;
+const badge = (st) => st === "当前" ? "green" : st === "候选" ? "amber" : "gray";
+
+function areaReadme(area) {
+  const d = DOCS.find((x) => x.cat === area && isIndex(x));
+  return d ? d.rel : null;
+}
+
+function renderStats() {
+  const areas = new Set(DOCS.map((d) => d.cat)).size;
+  const online = SERVICES_KNOWN ? SERVICES.filter((s) => s.up).length : null;
+  const uncat = DOCS.filter((d) => d.cat === "未分类").length;
+  const items = [
+    { v: DOCS.length, k: "文档", cls: "blue" },
+    { v: areas, k: "区域" },
+    { v: TOOLS.length, k: "工具" },
+    { v: online === null ? "—" : online, k: "服务在线", cls: online ? "green" : "" },
+    { v: uncat, k: "未分类" },
+  ];
+  $("stats").innerHTML = items.map((x) =>
+    `<div class="stat ${x.cls || ""}"><b>${x.v}</b><span>${x.k}</span></div>`).join("");
+  $("sub").textContent = `演示门户 · ${DOCS.length} 篇 · ${areas} 区域`;
+}
+
+function filteredDocs() {
+  const q = state.q.trim().toLowerCase();
+  return DOCS.filter((d) => {
+    if (state.currentOnly && d.st !== "当前") return false;
+    if (state.cat !== "全部" && d.cat !== state.cat) return false;
+    if (!q) return true;
+    return (d.title + " " + d.desc + " " + d.cat + " " + d.search).toLowerCase().includes(q);
+  });
+}
+
+function docCard(d) {
+  const idx = isIndex(d);
+  const title = idx ? (d.rel === "README.md" ? "项目文档 · 总览" : d.title + " · 索引") : d.title;
+  const type = idx ? "README" : d.rel.endsWith(".html") ? "HTML" : "MD";
+  return `<a class="doc-card ${idx ? "index" : ""}" href="${LINK_BASE}${encodeURI(d.rel)}" target="_blank"
+      title="${esc(d.rel)}">
+    <div class="doc-top"><span class="badge ${idx ? "gray" : badge(d.st)}">${idx ? "索引" : d.st}</span>
+      <span class="type">${type}</span></div>
+    <div class="doc-title">${esc(title)}</div>
+    <div class="doc-desc">${esc(d.desc || "")}</div>
+    <div class="doc-foot"><span>${esc(d.updated || "")}</span><span>${idx ? "区域入口" : "更新"}</span></div>
+  </a>`;
+}
+
+function renderAreas() {
+  const docs = filteredDocs();
+  const q = state.q.trim().toLowerCase();
+  const byArea = {};
+  docs.forEach((d) => (byArea[d.cat] = byArea[d.cat] || []).push(d));
+  const cats = AREA_ORDER.filter((c) => byArea[c] && byArea[c].length);
+  if (state.cat !== "全部" && !cats.includes(state.cat) && byArea[state.cat]) cats.push(state.cat);
+
+  if (!cats.length) {
+    $("areas").innerHTML = `<div class="empty">没有匹配的文档${q ? "：" + esc(q) : ""}</div>`;
+    return;
+  }
+  $("areas").innerHTML = cats.map((cat) => {
+    const list = byArea[cat].slice().sort((a, b) =>
+      (isIndex(a) - isIndex(b)) || (rank(a.st) - rank(b.st)) || String(b.updated).localeCompare(String(a.updated)));
+    const idx = areaReadme(cat);
+    const link = idx ? `<a class="link" href="${LINK_BASE}${encodeURI(idx)}" target="_blank">区域索引 →</a>` : "";
+    return `<section class="area" data-area="${esc(cat)}">
+      <div class="area-head"><span class="area-dot" style="background:${AREA_COLOR[cat] || "var(--dim)"}"></span>
+        <h2>${esc(cat)}</h2><span class="n">${list.length} 篇</span>${link}</div>
+      <div class="doc-grid">${list.map(docCard).join("")}</div>
+    </section>`;
+  }).join("");
+}
+
+function renderChips() {
+  const counts = {};
+  DOCS.forEach((d) => (counts[d.cat] = (counts[d.cat] || 0) + 1));
+  const cats = ["全部", ...AREA_ORDER.filter((c) => counts[c])];
+  $("chips").innerHTML = cats.map((c) =>
+    `<button class="${state.cat === c ? "on" : ""}" data-c="${esc(c)}">${esc(c)}<span class="n">${c === "全部" ? DOCS.length : counts[c]}</span></button>`).join("");
+  $("chips").querySelectorAll("button").forEach((b) =>
+    b.onclick = () => { state.cat = b.dataset.c; renderChips(); render(); });
+}
+
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(text); return true; }
+  } catch (e) {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove(); return ok;
+  } catch (e) { return false; }
+}
+
+function renderTools() {
+  const q = state.q.trim().toLowerCase();
+  const rows = TOOLS.filter((t) => !q || (t.name + t.desc + t.cmd + t.file).toLowerCase().includes(q));
+  $("toolsN").textContent = rows.length + " / " + TOOLS.length;
+  $("toolsGrid").innerHTML = rows.length ? rows.map((t) => `
+    <div class="tool-card">
+      <div class="tool-top"><span class="avatar">${esc(t.letter)}</span><b>${esc(t.name)}</b><span class="tag">${esc(t.tag)}</span></div>
+      <div class="tool-desc">${esc(t.desc)}</div>
+      <div class="tool-foot"><code>${esc(t.cmd)}</code>
+        <button class="copy" data-cmd="${esc(t.cmd)}">复制</button>
+        <button class="open" data-file="${esc(t.file)}" title="打开源文件">↗</button></div>
+    </div>`).join("") : '<div class="empty">没有匹配的工具</div>';
+  $("toolsGrid").querySelectorAll(".copy").forEach((b) =>
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      const ok = await copyText(b.dataset.cmd);
+      toast(ok ? "已复制：" + b.dataset.cmd : "复制失败，请手动选择命令");
+    });
+  $("toolsGrid").querySelectorAll(".open").forEach((b) =>
+    b.onclick = (e) => {
+      e.stopPropagation();
+      const w = window.open(TOOL_BASE + encodeURI(b.dataset.file), "_blank");
+      if (!w) toast("浏览器拦截了弹窗（演示环境）");
+    });
+}
+
+function render() { renderAreas(); renderTools(); }
+
+$("curToggle").onclick = () => {
+  state.currentOnly = !state.currentOnly;
+  $("curToggle").classList.toggle("on", state.currentOnly);
+  render(); toast(state.currentOnly ? "只显示当前文档" : "显示全部状态");
+};
+const MODES = ["auto", "light", "dark"];
+const MODE_ICON = { auto: "🌓", light: "☀️", dark: "🌙" };
+const MODE_TITLE = { auto: "自动（跟随系统）", light: "浅色", dark: "深色" };
+function getMode() { try { return localStorage.getItem("hub-theme-mode") || "auto"; } catch (e) { return "auto"; } }
+function setMode(m) {
+  if (m === "auto") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.dataset.theme = m;
+  const b = $("modeBtn");
+  b.textContent = MODE_ICON[m]; b.title = MODE_TITLE[m]; b.dataset.mode = m;
+  try { localStorage.setItem("hub-theme-mode", m); } catch (e) {}
+}
+$("modeBtn").onclick = () => setMode(MODES[(MODES.indexOf(getMode()) + 1) % MODES.length]);
+setMode(getMode());
+
+$("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "/" && document.activeElement !== $("q")) { e.preventDefault(); $("q").focus(); }
+});
+$("moreTools").onclick = (e) => { e.preventDefault(); toast("演示数据：上方即全部工具"); };
+function renderServices() {
+  $("services").innerHTML = '<span class="label">服务</span>' + SERVICES.map((s) =>
+    `<span class="svc ${s.up ? "up" : "off"}" data-url="${s.up ? s.url : ""}" title="${s.known ? (s.up ? "在线" : "离线") : "静态预览未探测"}"><span class="dot"></span>${esc(s.name)} :${s.port}</span>`).join("");
+  $("services").querySelectorAll(".svc").forEach((el) => {
+    el.onclick = () => el.dataset.url ? window.open(el.dataset.url, "_blank")
+      : toast(SERVICES_KNOWN ? "其余服务离线" : "静态预览未探测服务状态");
+  });
+}
+function renderFoot() {
+  const pending = GIT.pending ? ` · ${GIT.pending} 待提交` : "";
+  $("foot").innerHTML = `<span>演示门户 · 静态数据</span>
+    <span>上次同步 ${esc(GIT.last)} · ${GIT.files} 文件${pending}</span>
+    <span class="right">portal-dashboard · starter</span>`;
+}
+
+renderStats(); renderChips(); render(); renderServices(); renderFoot();
+</script>
+</body></html>

@@ -4,6 +4,8 @@
 
 当前第一个 Skill 是 [`flow-builder`](skills/flow-builder/SKILL.md)：它帮助 Agent 把业务流程、截图、HTML、表格或口述需求，整理成可以真正操作的系统原型。它不只生成流程图，也关注表单、CRUD、台账、状态流转、角色视图、异常处理、追溯和未来代码迁移。
 
+第二个 Skill 是 [`portal-dashboard`](skills/portal-dashboard/SKILL.md)：一套「Clash 面板风」的文档优先门户视觉系统（暖灰底、近白卡片、iOS 蓝、大圆角胶囊、tabular 数字），用于本地知识库 / 脚本门户首页。附带 [`assets/starter.html`](skills/portal-dashboard/assets/starter.html) 自包含起步模板（零依赖、file:// 直开）与 [`references/measurements.md`](skills/portal-dashboard/references/measurements.md) 采样记录。
+
 ![flow-builder demo](examples/demo.gif)
 
 ## 示例
@@ -48,8 +50,14 @@ skills-lab/
 ├── README.en.md
 ├── SKILL.md
 ├── skills/
-│   └── flow-builder/
-│       └── SKILL.md
+│   ├── flow-builder/
+│   │   └── SKILL.md
+│   └── portal-dashboard/
+│       ├── SKILL.md
+│       ├── assets/
+│       │   └── starter.html
+│       └── references/
+│           └── measurements.md
 ├── examples/
 │   ├── demo.gif
 │   └── mfg-procurement-to-assembly.html
