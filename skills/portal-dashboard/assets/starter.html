@@ -1,8 +1,9 @@
 <!doctype html>
 <!--
-  portal-dashboard 起步模板（Clash 面板风文档优先门户）
+  portal-dashboard 起步模板 v2（Clash 面板风文档优先门户）
   · 零外部依赖，file:// 直开可用
-  · 接入真实数据：替换下方 <script> 顶部的 DOCS / TOOLS / SERVICES / GIT / LINK_BASE / TOOL_BASE
+  · 接入真实数据：替换下方 <script> 顶部的 DOCS / FAVS0 / TRASH0 / TOOLS / SERVICES / GIT / LINK_BASE / TOOL_BASE
+  · 接入真实后端：实现 /api/favs、/api/trash、/api/trash/restore、/api/trash/purge 四个 POST 接口（离线时 api() 会 toast 提示只读）
   · 设计令牌与规范见同目录 SKILL.md；采样记录见 references/measurements.md
 -->
 <html lang="zh-CN"><head><meta charset="utf-8">
@@ -11,78 +12,124 @@
 <style>
   :root {
     color-scheme: light;
-    --bg:#f2f0f3; --card:#fcf9fa; --line:#e8e6e8; --soft:#f2f0f3;
+    --bg:#f9f7fa; --card:#ffffff; --line:#e4e1e6; --soft:#f2f0f3;
     --ink:#1d1d1f; --dim:#8a8a8e; --blue:#0091ff; --blue-soft:#e7f1ff;
     --green:#34c759; --green-soft:#a1f7a1; --amber:#ff9f0a; --red:#ff3b30;
-    --shadow:0 1px 2px rgba(20,20,30,.035);
+    --shadow:0 1px 3px rgba(20,20,30,.05);
     --r:20px; --r-sm:14px;
   }
   html[data-theme="dark"] {
     color-scheme: dark;
-    --bg:#0e0f12; --card:#17181c; --line:#2a2c31; --soft:#22242a;
+    --bg:#0e0f12; --card:#1a1b20; --line:#2c2e35; --soft:#22242a;
     --ink:#f2f2f7; --dim:#8e8e93; --blue:#0a84ff; --blue-soft:#10233c;
     --green:#30d158; --green-soft:#1f4d2a; --amber:#ff9f0a; --red:#ff453a;
-    --shadow:0 1px 2px rgba(0,0,0,.3);
+    --shadow:0 1px 3px rgba(0,0,0,.35);
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg:#0e0f12; --card:#17181c; --line:#2a2c31; --soft:#22242a;
+    --bg:#0e0f12; --card:#1a1b20; --line:#2c2e35; --soft:#22242a;
     --ink:#f2f2f7; --dim:#8e8e93; --blue:#0a84ff; --blue-soft:#10233c;
     --green:#30d158; --green-soft:#1f4d2a; --amber:#ff9f0a; --red:#ff453a;
-    --shadow:0 1px 2px rgba(0,0,0,.3);
+    --shadow:0 1px 3px rgba(0,0,0,.35);
     }
   }
   * { box-sizing:border-box; margin:0; }
   body { font:13px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",system-ui,sans-serif;
     color:var(--ink); background:var(--bg); }
   .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; }
-  .wrap { max-width:1440px; margin:0 auto; padding:28px 32px 56px; }
+  .wrap { max-width:1440px; margin:0 auto; padding:40px 44px 84px; }
 
   /* header */
-  .top { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:18px; }
+  .top { display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin-bottom:28px; }
   .brand { display:flex; align-items:center; gap:12px; }
   .logo { width:42px; height:42px; border-radius:13px; background:var(--blue); color:#fff;
     display:grid; place-items:center; font-weight:800; font-size:15px; letter-spacing:-.5px;
     box-shadow:0 6px 18px rgba(0,145,255,.22); }
-  h1 { font-size:26px; font-weight:700; letter-spacing:-.7px; }
+  h1 { font-size:28px; font-weight:700; letter-spacing:-.7px; }
   .sub { color:var(--dim); font-size:12.5px; margin-top:2px; }
   .search { margin-left:auto; display:flex; align-items:center; gap:9px; width:380px; max-width:40vw;
-    background:var(--card); border:1px solid var(--line); border-radius:999px; padding:11px 16px;
+    background:var(--card); border:0; border-radius:999px; padding:13px 18px;
     box-shadow:var(--shadow); }
   .search svg { width:16px; height:16px; color:var(--dim); flex:0 0 auto; }
   .search input { border:0; background:transparent; outline:none; width:100%; font:13.5px inherit; color:var(--ink); }
   .search input::placeholder { color:var(--dim); }
-  .mode-btn { width:44px; height:44px; border-radius:50%; border:1px solid var(--line); cursor:pointer;
-    background:var(--card); color:var(--ink); font-size:19px; display:grid; place-items:center;
-    box-shadow:var(--shadow); transition:transform .15s, border-color .15s; }
-  .mode-btn:hover { transform:scale(1.05); border-color:var(--blue); }
+  .search:focus-within { box-shadow:0 0 0 3px rgba(0,145,255,.16), var(--shadow); }
+  .mode-switch { margin-left:auto; display:flex; gap:2px; background:var(--card); border:0;
+    border-radius:999px; padding:3px; box-shadow:var(--shadow); }
+  .mode-switch button { width:32px; height:32px; border:0; border-radius:999px; background:transparent;
+    color:var(--dim); display:grid; place-items:center; cursor:pointer; transition:background .15s, color .15s; }
+  .mode-switch button:hover { color:var(--ink); }
+  .mode-switch button.on { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(0,145,255,.28); }
+  .mode-switch svg { width:16px; height:16px; }
 
-  /* compact stats */
-  .stats { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:10px; }
-  .stat { background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px 16px; }
-  .stat b { display:block; font-size:24px; font-weight:700; letter-spacing:-.8px; font-variant-numeric:tabular-nums; }
-  .stat span { color:var(--dim); font-size:11.5px; }
-  .stat.green b { color:var(--green); }
-  .stat.blue b { color:var(--blue); }
+  /* hero 行（参照原版大卡片） */
+  .hero-row { display:grid; grid-template-columns:2fr 1fr 1fr; gap:18px; margin-bottom:26px; }
+  .hero-mini { position:relative; overflow:hidden; border-radius:22px; padding:15px 22px; min-height:148px;
+    background:var(--card); border:0; box-shadow:0 2px 10px rgba(20,20,30,.06);
+    display:flex; align-items:center; gap:18px; }
+  .hero-content { position:relative; z-index:2; flex:1; min-width:0; display:flex; align-items:center; }
+  .hero-text { min-width:0; flex:1; display:flex; flex-direction:column; gap:10px; }
+  .pill { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 11px; font-size:12px;
+    background:var(--soft); color:var(--dim); }
+  .pill.green { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+  .pill.green .dot { background:#16a34a; }
+  html[data-theme="dark"] .pill.green { background:#14351f; color:#4ade80; border-color:#1f6b3a; }
+  .pill .dot { width:7px; height:7px; border-radius:50%; background:currentColor; }
+  .hero-main { display:flex; flex-direction:column; gap:3px; position:relative; z-index:2; }
+  .hero-num { font-size:32px; font-weight:700; letter-spacing:-1.2px; font-variant-numeric:tabular-nums; line-height:1.1; }
+  .hero-unit { font-size:13px; font-weight:500; color:var(--dim); margin-left:5px; letter-spacing:0; }
+  .hero-tags { display:flex; gap:6px; }
+  .tag { display:inline-flex; align-items:center; border-radius:999px; padding:2px 9px; font-size:11px; }
+  .tag.gray { background:var(--soft); color:var(--dim); }
+  .tag.blue { background:var(--blue-soft); color:var(--blue); }
+  .hero-meta { display:flex; align-items:baseline; gap:7px; position:relative; z-index:2;
+    color:var(--dim); font-size:11.5px; }
+  .hero-meta b { font-size:12.5px; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .hero-meta .sep { opacity:.35; }
+  .hero-art { position:relative; flex:0 0 42%; align-self:stretch; display:flex; align-items:center;
+    justify-content:center; min-width:0; }
+  .blob { position:relative; width:220px; height:150px; z-index:0; opacity:.95;
+    background:radial-gradient(circle at 38% 32%, #f4f9ff 0%, #e4efff 46%, #d8e9ff 100%);
+    border-radius:54% 46% 43% 57% / 58% 44% 56% 42%; }
+  .blob::before { content:""; position:absolute; left:-30px; top:26px; width:112px; height:100px;
+    background:radial-gradient(circle at 42% 40%, #f7fbff 0%, #e9f3ff 65%, #e0edff 100%);
+    border-radius:50% 50% 44% 56% / 56% 44% 56% 44%; opacity:.92; }
+  html[data-theme="dark"] .blob { background:radial-gradient(circle at 38% 32%, #16304f 0%, #0d1c30 70%); }
+  html[data-theme="dark"] .blob::before { background:radial-gradient(circle at 42% 40%, #142c48 0%, #0e1f34 70%); }
+  .blob-btn { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:46px; height:46px;
+    border-radius:50%; border:0; cursor:pointer; background:var(--blue); color:#fff; font-size:18px;
+    display:grid; place-items:center; box-shadow:0 10px 24px rgba(0,145,255,.32); z-index:3;
+    transition:transform .4s ease; }
+  .blob-btn:hover { transform:translate(-50%,-50%) scale(1.05); }
+  .metric { position:relative; overflow:hidden; border-radius:22px; padding:14px 18px; min-height:148px;
+    background:var(--card); border:0; box-shadow:0 2px 10px rgba(20,20,30,.06); }
+  html[data-theme="dark"] .hero-mini, html[data-theme="dark"] .metric { box-shadow:0 2px 10px rgba(0,0,0,.35); }
+  .metric-top { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:12px; }
+  .metric-top .dim { margin-left:auto; }
+  .metric-num { font-size:29px; font-weight:700; letter-spacing:-1.2px; margin-top:5px;
+    font-variant-numeric:tabular-nums; }
+  .metric-num .unit { font-size:13px; font-weight:500; color:var(--dim); margin-left:4px; letter-spacing:0; }
+  .spark { position:absolute; left:0; right:0; bottom:0; width:100%; height:62px; color:var(--blue); }
 
   /* service strip */
-  .services { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 18px; }
+  .services { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 26px; }
   .services .label { color:var(--dim); font-size:11.5px; margin-right:2px; }
   .svc { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 11px;
-    background:var(--card); border:1px solid var(--line); color:var(--dim); font-size:11.5px; cursor:pointer; }
+    background:var(--card); border:0; box-shadow:var(--shadow); color:var(--dim); font-size:11.5px; cursor:pointer; }
   .svc .dot { width:7px; height:7px; border-radius:50%; background:var(--green); }
   .svc.off .dot { background:#c9c7cc; }
   html[data-theme="dark"] .svc.off .dot { background:#4a4d55; }
-  .svc.up { color:var(--ink); }
-  .svc:hover { border-color:var(--blue); }
+  .svc.up { color:var(--ink); background:#f2fbf5; }
+  html[data-theme="dark"] .svc.up { background:#12251a; }
+  .svc:hover { box-shadow:0 3px 10px rgba(20,20,30,.12); }
 
   /* toolbar */
-  .toolbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:22px; }
+  .toolbar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:34px; }
   .chips { display:flex; gap:7px; flex-wrap:wrap; }
-  .chips button { border:1px solid var(--line); background:var(--card); border-radius:999px; font:12.5px inherit;
-    padding:5px 14px; color:var(--dim); cursor:pointer; }
-  .chips button.on { background:var(--blue); border-color:var(--blue); color:#fff; font-weight:600; }
+  .chips button { border:0; background:var(--card); border-radius:999px; font:12.5px inherit;
+    padding:5px 14px; color:var(--dim); cursor:pointer; box-shadow:var(--shadow); }
+  .chips button.on { background:var(--blue); color:#fff; font-weight:600; box-shadow:0 3px 10px rgba(0,145,255,.24); }
   .chips button .n { opacity:.7; font-size:10.5px; margin-left:4px; }
   .toolbar .right { margin-left:auto; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
   .toggle { display:flex; align-items:center; gap:8px; color:var(--dim); font-size:12px; cursor:pointer; }
@@ -93,21 +140,82 @@
     background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); transition:transform .15s; }
   .switch.on { background:var(--blue); }
   .switch.on::after { transform:translateX(16px); }
+  .viewbtn { border:0; background:var(--card); border-radius:999px; font:12.5px inherit;
+    padding:5px 14px; color:var(--dim); cursor:pointer; box-shadow:var(--shadow); }
+  .viewbtn.on { background:var(--blue); color:#fff; font-weight:600; box-shadow:0 3px 10px rgba(0,145,255,.24); }
+  .viewbtn .n { opacity:.7; font-size:10.5px; margin-left:4px; }
+  .card-actions { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:12px;
+    z-index:3; border-radius:inherit; background:rgba(255,255,255,.62); backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity .15s; }
+  html[data-theme="dark"] .card-actions { background:rgba(12,13,17,.62); }
+  .doc-card:hover .card-actions, .doc-card:focus-within .card-actions { opacity:1; }
+  .doc-card { position:relative; }
+  .star, .del { width:38px; height:38px; border:0; border-radius:50%; background:var(--card);
+    box-shadow:0 4px 14px rgba(20,20,30,.16); display:grid; place-items:center; font-size:15px;
+    cursor:pointer; color:var(--dim); pointer-events:auto; transition:color .12s, transform .12s; }
+  .star:hover { color:#f5a623; transform:scale(1.06); }
+  .star.on { color:#f5a623; }
+  .del:hover { color:var(--red); transform:scale(1.06); }
+  @media (hover: none) {
+    .card-actions { inset:auto; top:10px; right:10px; background:transparent; backdrop-filter:none;
+      -webkit-backdrop-filter:none; opacity:1; }
+    .star, .del { width:32px; height:32px; font-size:13px; }
+  }
+  /* ── 弹窗 ── */
+  .overlay { position:fixed; inset:0; background:rgba(15,15,20,.42); backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px); z-index:300; opacity:0; pointer-events:none; transition:opacity .18s; }
+  .overlay.on { opacity:1; pointer-events:auto; }
+  .modal { position:fixed; left:50%; top:50%; transform:translate(-50%,-50%) scale(.96); width:min(560px,92vw);
+    max-height:560px; background:var(--card); border:1px solid var(--line); border-radius:20px;
+    box-shadow:0 24px 60px rgba(0,0,0,.25); z-index:301; display:flex; flex-direction:column;
+    opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; }
+  .modal.on { opacity:1; pointer-events:auto; transform:translate(-50%,-50%) scale(1); }
+  .modal-head { display:flex; align-items:baseline; gap:10px; padding:18px 22px 14px;
+    border-bottom:1px solid var(--line); }
+  .modal-head b { font-size:15.5px; font-weight:700; letter-spacing:-.2px; }
+  .modal-head .m-sub { color:var(--dim); font-size:11.5px; }
+  .modal-head .m-close { margin-left:auto; border:0; background:var(--soft); border-radius:8px; width:30px;
+    height:30px; cursor:pointer; color:var(--dim); font-size:13px; }
+  .modal-head .m-close:hover { color:var(--ink); }
+  .modal-body { padding:16px 22px 22px; overflow:auto; }
+  .m-list { display:flex; flex-direction:column; gap:8px; }
+  .m-item { display:flex; align-items:center; gap:10px; background:var(--soft); border-radius:12px;
+    padding:10px 12px; }
+  .m-main { min-width:0; flex:1; }
+  .m-main b { display:block; font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; }
+  .m-main span { display:block; color:var(--dim); font-size:11px; overflow:hidden; text-overflow:ellipsis;
+    white-space:nowrap; }
+  .m-open { color:var(--blue); text-decoration:none; font-size:12px; flex:0 0 auto; }
+  .m-open:hover { text-decoration:underline; }
+  .m-unfav, .m-restore { border:0; border-radius:8px; font:12px inherit; padding:5px 12px; cursor:pointer;
+    flex:0 0 auto; }
+  .m-unfav { background:var(--card); color:var(--dim); }
+  .m-unfav:hover { color:var(--red); }
+  .m-restore { background:var(--blue); color:#fff; }
+  .m-restore:hover { opacity:.88; }
+  .m-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+  .btn { border:0; border-radius:10px; font:13px inherit; padding:8px 18px; cursor:pointer; }
+  .btn.primary { background:var(--blue); color:#fff; }
+  .btn.danger { background:var(--red); color:#fff; }
+  .btn.ghost { background:var(--soft); color:var(--dim); }
+  .btn:hover { opacity:.88; }
+  .m-desc { color:var(--dim); font-size:12.5px; line-height:1.6; }
 
   /* area sections */
-  .area { margin-top:26px; }
-  .area-head { display:flex; align-items:center; gap:10px; padding-bottom:9px; border-bottom:1px solid var(--line);
-    margin-bottom:12px; }
+  .area { margin-top:46px; }
+  .area-head { display:flex; align-items:center; gap:10px; padding-bottom:12px; border-bottom:1px solid var(--line);
+    margin-bottom:16px; }
   .area-dot { width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
-  .area-head h2 { font-size:18px; font-weight:700; letter-spacing:-.3px; }
+  .area-head h2 { font-size:20px; font-weight:700; letter-spacing:-.3px; }
   .area-head .n { color:var(--dim); font-size:11.5px; }
   .area-head .link { margin-left:auto; color:var(--blue); text-decoration:none; font-size:11.5px; }
   .area-head .link:hover { text-decoration:underline; }
-  .doc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:12px; }
-  .doc-card { display:flex; flex-direction:column; min-height:132px; padding:14px 16px; border-radius:16px;
-    background:var(--card); border:1px solid transparent; box-shadow:var(--shadow); text-decoration:none;
+  .doc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:18px; }
+  .doc-card { display:flex; flex-direction:column; min-height:150px; padding:18px 20px; border-radius:18px;
+    background:var(--card); border:0; box-shadow:var(--shadow); text-decoration:none;
     color:var(--ink); transition:transform .14s, border-color .14s; }
-  .doc-card:hover { transform:translateY(-2px); border-color:var(--blue); }
+  .doc-card:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(20,20,30,.08); }
   .doc-top { display:flex; align-items:center; gap:6px; }
   .badge { display:inline-block; border-radius:999px; padding:2px 8px; font-size:10.5px; }
   .badge.green { background:#e7f9ec; color:#1a8f3a; }
@@ -115,22 +223,23 @@
   .badge.gray { background:var(--soft); color:var(--dim); }
   .badge.amber { background:#fff4e0; color:#b26a00; }
   html[data-theme="dark"] .badge.amber { background:#3a2a10; color:var(--amber); }
+  .badge.blue { background:var(--blue-soft); color:var(--blue); }
   .type { margin-left:auto; font-family:ui-monospace,monospace; font-size:9.5px; color:var(--dim); }
-  .doc-title { font-size:14px; font-weight:600; margin-top:9px; line-height:1.4; }
-  .doc-desc { color:var(--dim); font-size:12px; margin-top:4px; line-height:1.5;
+  .doc-title { font-size:15px; font-weight:600; margin-top:12px; line-height:1.4; padding-right:64px; }
+  .doc-desc { color:var(--dim); font-size:12px; margin-top:6px; line-height:1.55;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
   .doc-foot { display:flex; justify-content:space-between; color:var(--dim); font-size:10.5px; margin-top:auto;
-    padding-top:10px; }
-  .doc-card.index { border-style:dashed; border-color:var(--line); background:transparent; box-shadow:none; }
-  .doc-card.index:hover { border-color:var(--blue); background:var(--card); }
-  .doc-card.index .doc-title { color:var(--dim); font-weight:500; }
+    padding-top:12px; }
+  .doc-card.index { border:0; box-shadow:none; background:linear-gradient(160deg, var(--card) 30%, var(--blue-soft) 130%); }
+  .doc-card.index:hover { transform:none; box-shadow:none; }
+  .doc-card.index .doc-title { color:var(--ink); font-weight:600; }
 
   /* tools */
-  .tools { margin-top:34px; }
-  .tool-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
-  .tool-card { display:flex; flex-direction:column; gap:6px; padding:12px 14px; border-radius:16px;
-    background:var(--card); border:1px solid transparent; box-shadow:var(--shadow); }
-  .tool-card:hover { border-color:var(--blue); }
+  .tools { margin-top:54px; }
+  .tool-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:18px; }
+  .tool-card { display:flex; flex-direction:column; gap:8px; padding:16px 18px; border-radius:18px;
+    background:var(--card); border:0; box-shadow:var(--shadow); }
+  .tool-card:hover { box-shadow:0 8px 22px rgba(20,20,30,.08); }
   .tool-top { display:flex; align-items:center; gap:8px; }
   .tool-top .avatar { width:30px; height:30px; border-radius:50%; background:var(--blue-soft); color:var(--blue);
     display:grid; place-items:center; font-weight:700; font-size:12px; flex:0 0 auto; }
@@ -148,8 +257,8 @@
   .tool-foot .open { color:var(--dim); background:none; border:0; cursor:pointer; font-size:13px; padding:0; }
   .tool-foot .open:hover { color:var(--blue); }
 
-  .empty { color:var(--dim); padding:26px 4px; text-align:center; }
-  .foot { margin-top:38px; color:var(--dim); font-size:11.5px; border-top:1px solid var(--line); padding-top:13px;
+  .empty { color:var(--dim); padding:40px 4px; text-align:center; }
+  .foot { margin-top:64px; color:var(--dim); font-size:11.5px; border-top:1px solid var(--line); padding-top:16px;
     display:flex; gap:12px; flex-wrap:wrap; }
   .foot .right { margin-left:auto; }
 
@@ -160,13 +269,20 @@
   .toast.on { opacity:1; transform:translateX(-50%) translateY(0); }
 
   @media (max-width:900px) {
-    .wrap { padding:20px 16px 48px; }
+    .wrap { padding:24px 18px 60px; }
     .search { width:100%; max-width:none; order:3; margin-left:0; }
-    .stats { grid-template-columns:repeat(2,1fr); }
+    .hero-row { grid-template-columns:1fr 1fr; }
+    .hero-mini { grid-column:span 2; }
     .toolbar .right { margin-left:0; }
   }
   @media (max-width:680px) {
     .doc-grid, .tool-grid { grid-template-columns:1fr; }
+    .hero-row { grid-template-columns:1fr; }
+    .hero-mini { grid-column:auto; gap:8px; }
+    .hero-art { flex:0 0 38%; }
+    .blob { width:140px; height:120px; }
+    .blob::before { width:86px; height:76px; left:-22px; top:22px; }
+    .blob-btn { width:38px; height:38px; font-size:15px; }
     h1 { font-size:23px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition:none !important; } }
@@ -181,16 +297,70 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" placeholder="搜索文档 / 工具…（/ 聚焦）" autocomplete="off">
     </label>
-    <button class="mode-btn" id="modeBtn" title="自动（跟随系统）">🌓</button>
+    <div class="mode-switch" id="modeSwitch" role="group" aria-label="主题模式">
+      <button data-mode="auto" title="自动（跟随系统）" aria-label="自动">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor" stroke="none"/></svg>
+      </button>
+      <button data-mode="light" title="浅色" aria-label="浅色">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      </button>
+      <button data-mode="dark" title="深色" aria-label="深色">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.5 6.5 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
   </header>
 
-  <div class="stats" id="stats"></div>
+  <section class="hero-row">
+    <article class="card hero-mini">
+      <div class="hero-content">
+        <div class="hero-text">
+          <div class="hero-top"><span class="pill green"><span class="dot"></span>运行中</span></div>
+          <div class="hero-main">
+            <div class="hero-num"><span id="docsCount">—</span><span class="hero-unit">篇文档</span></div>
+          </div>
+          <div class="hero-meta">
+            <span><b id="svcUp">—</b> 个服务在线</span>
+            <span class="sep">·</span>
+            <span><b id="syncLast">—</b> 已同步</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-art">
+        <div class="blob"></div>
+        <button class="blob-btn" id="refreshBtn" title="刷新状态">⟳</button>
+      </div>
+    </article>
+    <article class="card metric">
+      <div class="metric-top"><span>知识库</span><span class="dim" id="docsN">—</span></div>
+      <div class="metric-num"><span id="areaCount">—</span><span class="unit">个区域</span></div>
+      <svg class="spark" viewBox="0 0 300 84" preserveAspectRatio="none">
+        <defs><linearGradient id="sg1" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0091ff" stop-opacity=".2"/><stop offset="1" stop-color="#0091ff" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="M0,66 C24,66 34,40 60,48 C86,56 96,22 118,34 C140,46 150,70 174,64 C198,58 210,28 232,40 C254,52 268,72 300,64 L300,84 L0,84 Z" fill="url(#sg1)"/>
+        <path d="M0,66 C24,66 34,40 60,48 C86,56 96,22 118,34 C140,46 150,70 174,64 C198,58 210,28 232,40 C254,52 268,72 300,64" fill="none" stroke="#0091ff" stroke-width="1.6"/>
+      </svg>
+    </article>
+    <article class="card metric">
+      <div class="metric-top"><span>工具与脚本</span><span class="dim" id="toolsCount">—</span></div>
+      <div class="metric-num"><span id="toolsTotal">—</span><span class="unit">项</span></div>
+      <svg class="spark" viewBox="0 0 300 84" preserveAspectRatio="none">
+        <defs><linearGradient id="sg2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0091ff" stop-opacity=".18"/><stop offset="1" stop-color="#0091ff" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="M0,58 C22,50 36,68 58,62 C80,56 92,36 114,46 C136,56 148,72 172,66 C196,60 210,40 232,48 C254,56 272,66 300,58 L300,84 L0,84 Z" fill="url(#sg2)"/>
+        <path d="M0,58 C22,50 36,68 58,62 C80,56 92,36 114,46 C136,56 148,72 172,66 C196,60 210,40 232,48 C254,56 272,66 300,58" fill="none" stroke="#0091ff" stroke-width="1.6"/>
+      </svg>
+    </article>
+  </section>
 
   <div class="services" id="services"><span class="label">服务</span></div>
 
   <div class="toolbar">
     <div class="chips" id="chips"></div>
     <div class="right">
+      <button class="viewbtn" id="favBtn">⭐ 收藏<span class="n" id="favN">0</span></button>
+      <button class="viewbtn" id="trashBtn">🗑 垃圾箱<span class="n" id="trashN">0</span></button>
       <label class="toggle"><button class="switch" id="curToggle"></button>只看当前</label>
     </div>
   </div>
@@ -205,10 +375,16 @@
   <footer class="foot" id="foot"></footer>
 </div>
 <div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="modal-head"><b id="mTitle"></b><span class="m-sub" id="mSub"></span>
+    <button class="m-close" id="mClose">✕</button></div>
+  <div class="modal-body" id="mBody"></div>
+</div>
 
 <script>
 /* ============ 演示数据：接入真实后端时整体替换以下常量 ============ */
-const DOCS = [
+let DOCS = [
   { rel: "README.md", title: "本地知识库", desc: "知识库总入口：区域地图、环境约定与常用命令一览。", cat: "总览", st: "当前", updated: "2026-11-18", search: "readme 入口 概览 地图 约定" },
   { rel: "总览/快速上手.md", title: "快速上手", desc: "安装依赖、启动门户、打开页面的三步流程。", cat: "总览", st: "当前", updated: "2026-11-19", search: "入门 安装 启动 依赖" },
   { rel: "开发与联调/README.md", title: "开发与联调", desc: "本区域索引：环境、调试工具与联调流程的入口清单。", cat: "开发与联调", st: "当前", updated: "2026-11-15", search: "开发 联调 索引 入口" },
@@ -226,6 +402,8 @@ const DOCS = [
   { rel: "运营后台/权限配置说明.md", title: "权限配置说明", desc: "角色与页面权限的映射关系（新方案候选）。", cat: "运营后台", st: "候选", updated: "2026-11-07", search: "权限 角色 页面 配置" },
   { rel: "会议纪要-2026-11.md", title: "会议纪要 2026-11", desc: "月度评审的要点记录，尚未归档到区域。", cat: "未分类", st: "参考", updated: "2026-11-05", search: "会议 纪要 评审" },
 ];
+const FAVS0 = ["车辆通信/UDS 命令速查.md", "总览/快速上手.md"];
+const TRASH0 = [{ rel: "归档/旧版发布手册.md", deletedAt: "2026-11-02T09:00:00.000Z", size: 5120 }];
 const TOOLS = [
   { name: "门户服务", desc: "本地渲染知识库与工具面板，支持实时扫描与全文搜索。", cmd: "portal serve", file: "server/serve.ts", tag: "常驻", letter: "P" },
   { name: "文档体检", desc: "校验 frontmatter、断链、绝对路径与密钥模式，作为提交门禁。", cmd: "portal check", file: "server/check.ts", tag: "门禁", letter: "C" },
@@ -248,10 +426,12 @@ const AREA_ORDER = ["总览", "开发与联调", "车辆通信", "后端与数�
 const AREA_COLOR = { "总览": "#8a8a8e", "开发与联调": "#ff9f0a", "车辆通信": "#34c759", "后端与数据": "#0091ff",
   "运营后台": "#8b7ce8", "未分类": "#8a8a8e" };
 
-/* ============ 渲染逻辑（参考实现同款，最小改动） ============ */
+/* ============ 渲染逻辑（参照实现同款） ============ */
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 const state = { q: "", cat: "全部", currentOnly: false };
+let FAVS = FAVS0.slice();
+let TRASH = TRASH0.slice();
 let toastTimer = null;
 
 function toast(msg) {
@@ -267,20 +447,23 @@ function areaReadme(area) {
   return d ? d.rel : null;
 }
 
-function renderStats() {
+function renderHero() {
   const areas = new Set(DOCS.map((d) => d.cat)).size;
-  const online = SERVICES_KNOWN ? SERVICES.filter((s) => s.up).length : null;
-  const uncat = DOCS.filter((d) => d.cat === "未分类").length;
-  const items = [
-    { v: DOCS.length, k: "文档", cls: "blue" },
-    { v: areas, k: "区域" },
-    { v: TOOLS.length, k: "工具" },
-    { v: online === null ? "—" : online, k: "服务在线", cls: online ? "green" : "" },
-    { v: uncat, k: "未分类" },
-  ];
-  $("stats").innerHTML = items.map((x) =>
-    `<div class="stat ${x.cls || ""}"><b>${x.v}</b><span>${x.k}</span></div>`).join("");
+  const online = SERVICES_KNOWN ? SERVICES.filter((s) => s.up).length : "—";
+  $("docsCount").textContent = DOCS.length;
+  $("docsN").textContent = DOCS.length + " 篇";
+  $("areaCount").textContent = areas;
+  $("svcUp").textContent = online;
+  $("toolsTotal").textContent = TOOLS.length;
+  $("toolsCount").textContent = TOOLS.length + " 个命令";
+  $("syncLast").textContent = GIT.last && GIT.last !== "—" ? String(GIT.last).slice(11) : "—";
   $("sub").textContent = `演示门户 · ${DOCS.length} 篇 · ${areas} 区域`;
+  $("refreshBtn").onclick = () => {
+    const b = $("refreshBtn");
+    b.style.transform = "translate(-50%,-50%) rotate(360deg)";
+    setTimeout(() => (b.style.transform = "translate(-50%,-50%)"), 420);
+    toast(SERVICES_KNOWN ? `状态已刷新 · ${online === "—" ? 0 : online} 服务在线` : "离线版为静态快照，刷新页面更新");
+  };
 }
 
 function filteredDocs() {
@@ -297,9 +480,14 @@ function docCard(d) {
   const idx = isIndex(d);
   const title = idx ? (d.rel === "README.md" ? "项目文档 · 总览" : d.title + " · 索引") : d.title;
   const type = idx ? "README" : d.rel.endsWith(".html") ? "HTML" : "MD";
-  return `<a class="doc-card ${idx ? "index" : ""}" href="${LINK_BASE}${encodeURI(d.rel)}" target="_blank"
+  const fav = FAVS.includes(d.rel);
+  return `<a class="doc-card ${idx ? "index" : ""}" href="${LINK_BASE}${encodeURI(d.rel)}"
       title="${esc(d.rel)}">
-    <div class="doc-top"><span class="badge ${idx ? "gray" : badge(d.st)}">${idx ? "索引" : d.st}</span>
+    <div class="card-actions">
+      <button class="star ${fav ? "on" : ""}" data-rel="${esc(d.rel)}" title="收藏">${fav ? "★" : "☆"}</button>
+      <button class="del" data-rel="${esc(d.rel)}" title="移到垃圾箱">🗑</button>
+    </div>
+    <div class="doc-top"><span class="badge ${idx ? "blue" : badge(d.st)}">${idx ? "索引" : d.st}</span>
       <span class="type">${type}</span></div>
     <div class="doc-title">${esc(title)}</div>
     <div class="doc-desc">${esc(d.desc || "")}</div>
@@ -323,7 +511,7 @@ function renderAreas() {
     const list = byArea[cat].slice().sort((a, b) =>
       (isIndex(a) - isIndex(b)) || (rank(a.st) - rank(b.st)) || String(b.updated).localeCompare(String(a.updated)));
     const idx = areaReadme(cat);
-    const link = idx ? `<a class="link" href="${LINK_BASE}${encodeURI(idx)}" target="_blank">区域索引 →</a>` : "";
+    const link = idx ? `<a class="link" href="${LINK_BASE}${encodeURI(idx)}">区域索引 →</a>` : "";
     return `<section class="area" data-area="${esc(cat)}">
       <div class="area-head"><span class="area-dot" style="background:${AREA_COLOR[cat] || "var(--dim)"}"></span>
         <h2>${esc(cat)}</h2><span class="n">${list.length} 篇</span>${link}</div>
@@ -340,6 +528,8 @@ function renderChips() {
     `<button class="${state.cat === c ? "on" : ""}" data-c="${esc(c)}">${esc(c)}<span class="n">${c === "全部" ? DOCS.length : counts[c]}</span></button>`).join("");
   $("chips").querySelectorAll("button").forEach((b) =>
     b.onclick = () => { state.cat = b.dataset.c; renderChips(); render(); });
+  $("favN").textContent = FAVS.length;
+  $("trashN").textContent = TRASH.length;
 }
 
 async function copyText(text) {
@@ -373,12 +563,127 @@ function renderTools() {
       const ok = await copyText(b.dataset.cmd);
       toast(ok ? "已复制：" + b.dataset.cmd : "复制失败，请手动选择命令");
     });
+  /* 参照实现用 location.href 同页打开源文件；演示模板用 window.open 避免假路径把页面导航走 */
   $("toolsGrid").querySelectorAll(".open").forEach((b) =>
     b.onclick = (e) => {
       e.stopPropagation();
       const w = window.open(TOOL_BASE + encodeURI(b.dataset.file), "_blank");
       if (!w) toast("浏览器拦截了弹窗（演示环境）");
     });
+}
+
+async function api(path, body) {
+  try {
+    const res = await fetch(path, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body || {}),
+    });
+    return await res.json();
+  } catch (e) {
+    toast("该操作仅在线门户可用（演示数据只读）");
+    throw e;
+  }
+}
+
+function openModal(title, sub, html) {
+  $("mTitle").textContent = title;
+  $("mSub").textContent = sub || "";
+  $("mBody").innerHTML = html;
+  $("modal").classList.add("on");
+  $("overlay").classList.add("on");
+}
+function closeModal() {
+  $("modal").classList.remove("on");
+  $("overlay").classList.remove("on");
+}
+$("mClose").onclick = closeModal;
+$("overlay").onclick = closeModal;
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeModal();
+});
+
+function renderFavsModal() {
+  const rows = FAVS.map((rel) => DOCS.find((d) => d.rel === rel)).filter(Boolean);
+  openModal("⭐ 收藏夹", FAVS.length + " 篇",
+    rows.length
+      ? `<div class="m-list">` + rows.map((d) => `
+        <div class="m-item">
+          <div class="m-main"><b>${esc(d.title)}</b><span>${esc(d.rel)}</span></div>
+          <a class="m-open" href="${LINK_BASE}${encodeURI(d.rel)}">打开</a>
+          <button class="m-unfav" data-rel="${esc(d.rel)}">移除</button>
+        </div>`).join("") + `</div>`
+      : `<div class="empty">还没有收藏（点卡片右上 ☆）</div>`);
+  $("mBody").querySelectorAll(".m-unfav").forEach((b) =>
+    b.onclick = async () => {
+      try {
+        FAVS = await api("/api/favs", { rel: b.dataset.rel });
+        renderChips();
+        renderFavsModal();
+      } catch (e) {}
+    });
+}
+
+function renderTrashModal() {
+  openModal("🗑 垃圾箱", TRASH.length + " 项 · 保留 30 天后自动转入归档",
+    TRASH.length
+      ? `<div class="m-list">` + TRASH.map((t) => {
+          const days = Math.floor((Date.now() - new Date(t.deletedAt).getTime()) / 86400000);
+          return `<div class="m-item">
+            <div class="m-main"><b>${esc(t.rel)}</b><span>${esc(String(t.deletedAt).slice(0, 10))} 删除（${days} 天前） · ${(t.size / 1024).toFixed(1)}KB</span></div>
+            <button class="m-restore" data-rel="${esc(t.rel)}">恢复</button>
+          </div>`;
+        }).join("") + `</div>
+        <div class="m-actions">
+          <button class="btn ghost" id="mCancel2">关闭</button>
+          <button class="btn primary" id="mPurge">过期条目转入归档</button>
+        </div>`
+      : `<div class="empty">垃圾箱是空的</div>`);
+  const cancel = $("mCancel2");
+  if (cancel) cancel.onclick = closeModal;
+  const purge = $("mPurge");
+  if (purge) purge.onclick = async () => {
+    try {
+      const res = await api("/api/trash/purge", {});
+      closeModal();
+      toast(`已转档 ${res.moved.length} 项，页面刷新中…`);
+      setTimeout(() => location.reload(), 900);
+    } catch (e) {}
+  };
+  $("mBody").querySelectorAll(".m-restore").forEach((b) =>
+    b.onclick = async () => {
+      try {
+        await api("/api/trash/restore", { rel: b.dataset.rel });
+        closeModal();
+        toast("已恢复，页面刷新中…");
+        setTimeout(() => location.reload(), 700);
+      } catch (e) {}
+    });
+}
+
+function confirmDelete(rel) {
+  const d = DOCS.find((x) => x.rel === rel);
+  openModal("确认删除", "",
+    `<p class="m-desc">要把下面这篇移到垃圾箱吗？删除后保留 30 天，之后自动转入归档。</p>
+    <div class="m-item" style="margin-top:12px">
+      <div class="m-main"><b>${esc(d ? d.title : rel)}</b><span>${esc(rel)}</span></div>
+    </div>
+    <div class="m-actions">
+      <button class="btn ghost" id="mCancel">取消</button>
+      <button class="btn danger" id="mConfirm">确认删除</button>
+    </div>`);
+  $("mCancel").onclick = closeModal;
+  $("mConfirm").onclick = async () => {
+    try {
+      await api("/api/trash", { rel });
+      DOCS = DOCS.filter((x) => x.rel !== rel);
+      FAVS = FAVS.filter((r) => r !== rel);
+      closeModal();
+      toast("已移到垃圾箱（保留 30 天）");
+      renderChips();
+      render();
+    } catch (e) {}
+  };
 }
 
 function render() { renderAreas(); renderTools(); }
@@ -388,18 +693,14 @@ $("curToggle").onclick = () => {
   $("curToggle").classList.toggle("on", state.currentOnly);
   render(); toast(state.currentOnly ? "只显示当前文档" : "显示全部状态");
 };
-const MODES = ["auto", "light", "dark"];
-const MODE_ICON = { auto: "🌓", light: "☀️", dark: "🌙" };
-const MODE_TITLE = { auto: "自动（跟随系统）", light: "浅色", dark: "深色" };
 function getMode() { try { return localStorage.getItem("hub-theme-mode") || "auto"; } catch (e) { return "auto"; } }
 function setMode(m) {
   if (m === "auto") document.documentElement.removeAttribute("data-theme");
   else document.documentElement.dataset.theme = m;
-  const b = $("modeBtn");
-  b.textContent = MODE_ICON[m]; b.title = MODE_TITLE[m]; b.dataset.mode = m;
+  document.querySelectorAll("#modeSwitch button").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
   try { localStorage.setItem("hub-theme-mode", m); } catch (e) {}
 }
-$("modeBtn").onclick = () => setMode(MODES[(MODES.indexOf(getMode()) + 1) % MODES.length]);
+document.querySelectorAll("#modeSwitch button").forEach((b) => b.onclick = () => setMode(b.dataset.mode));
 setMode(getMode());
 
 $("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
@@ -407,9 +708,28 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "/" && document.activeElement !== $("q")) { e.preventDefault(); $("q").focus(); }
 });
 $("moreTools").onclick = (e) => { e.preventDefault(); toast("演示数据：上方即全部工具"); };
+$("favBtn").onclick = () => renderFavsModal();
+$("trashBtn").onclick = () => renderTrashModal();
+
+document.addEventListener("click", async (e) => {
+  const el = e.target.closest ? e.target.closest(".star, .del") : null;
+  if (!el) return;
+  if (el.classList.contains("star")) {
+    e.preventDefault(); e.stopPropagation();
+    try {
+      const favs = await api("/api/favs", { rel: el.dataset.rel });
+      FAVS = favs;
+      renderChips(); render();
+    } catch (err) {}
+  } else if (el.classList.contains("del")) {
+    e.preventDefault(); e.stopPropagation();
+    confirmDelete(el.dataset.rel);
+  }
+});
 function renderServices() {
   $("services").innerHTML = '<span class="label">服务</span>' + SERVICES.map((s) =>
     `<span class="svc ${s.up ? "up" : "off"}" data-url="${s.up ? s.url : ""}" title="${s.known ? (s.up ? "在线" : "离线") : "静态预览未探测"}"><span class="dot"></span>${esc(s.name)} :${s.port}</span>`).join("");
+  /* 参照实现用 location.href 跳转；演示模板用 window.open 避免假地址把页面导航走 */
   $("services").querySelectorAll(".svc").forEach((el) => {
     el.onclick = () => el.dataset.url ? window.open(el.dataset.url, "_blank")
       : toast(SERVICES_KNOWN ? "其余服务离线" : "静态预览未探测服务状态");
@@ -422,6 +742,6 @@ function renderFoot() {
     <span class="right">portal-dashboard · starter</span>`;
 }
 
-renderStats(); renderChips(); render(); renderServices(); renderFoot();
+renderHero(); renderChips(); render(); renderServices(); renderFoot();
 </script>
 </body></html>
