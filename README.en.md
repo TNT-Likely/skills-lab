@@ -4,6 +4,8 @@ A small public collection of Agent Skills that can be added, tested, and shared 
 
 The first skill is [`flow-builder`](skills/flow-builder/SKILL.md). It helps an agent turn a business process, screenshot, HTML reference, spreadsheet, or rough request into an interactive system prototype. It covers more than diagrams: forms, CRUD, ledgers, state transitions, role views, exception handling, traceability, and a path toward production code.
 
+The second skill is [`portal-dashboard`](skills/portal-dashboard/SKILL.md): a "Clash-panel-inspired" docs-first portal visual system (warm gray background, near-white cards, iOS blue, large-radius pills, tabular numerals) for local knowledge-base / script portal home pages. It ships with a self-contained [`assets/starter.html`](skills/portal-dashboard/assets/starter.html) starter template (zero dependencies, opens directly from `file://`) and [`references/measurements.md`](skills/portal-dashboard/references/measurements.md) sampling records.
+
 ![flow-builder demo](examples/demo.gif)
 
 ## Example
@@ -48,8 +50,14 @@ skills-lab/
 ├── README.en.md
 ├── SKILL.md
 ├── skills/
-│   └── flow-builder/
-│       └── SKILL.md
+│   ├── flow-builder/
+│   │   └── SKILL.md
+│   └── portal-dashboard/
+│       ├── SKILL.md
+│       ├── assets/
+│       │   └── starter.html
+│       └── references/
+│           └── measurements.md
 ├── examples/
 │   ├── demo.gif
 │   └── mfg-procurement-to-assembly.html
