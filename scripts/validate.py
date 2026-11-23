@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Small publication check for the skills-lab repository."""
 from pathlib import Path
+import json
 import re
 import sys
 
@@ -8,25 +9,35 @@ ROOT = Path(__file__).resolve().parents[1]
 required = [
     ROOT / "README.md",
     ROOT / "README.en.md",
-    ROOT / "SKILL.md",
+    ROOT / ".claude-plugin/marketplace.json",
     ROOT / "skills/flow-builder/SKILL.md",
     ROOT / "examples/demo.gif",
     ROOT / "examples/mfg-procurement-to-assembly.html",
     ROOT / "examples/mfg-vcu-after-sales-replacement.html",
     ROOT / "examples/mfg-vcu-after-sales-implementation-plan.md",
     ROOT / "examples/mfg-vcu-after-sales-implementation-plan.en.md",
+    ROOT / "scripts/install.sh",
     ROOT / "LICENSE",
 ]
 missing = [str(p.relative_to(ROOT)) for p in required if not p.exists()]
 if missing:
     raise SystemExit(f"missing required files: {', '.join(missing)}")
 
-for skill in (ROOT / "SKILL.md", ROOT / "skills/flow-builder/SKILL.md"):
+for skill in (ROOT / "skills/flow-builder/SKILL.md",):
     text = skill.read_text(encoding="utf-8")
     if not re.search(r"^name: flow-builder$", text, re.M):
         raise SystemExit(f"invalid skill name: {skill}")
     if not re.search(r"^description: Use when .+", text, re.M):
         raise SystemExit(f"invalid skill description: {skill}")
+
+marketplace = json.loads((ROOT / ".claude-plugin/marketplace.json").read_text(encoding="utf-8"))
+plugins = {p.get("name"): p for p in marketplace.get("plugins", [])}
+for name in ("flow-builder", "portal-dashboard"):
+    if name not in plugins:
+        raise SystemExit(f"marketplace missing plugin: {name}")
+    for rel in plugins[name].get("skills", []):
+        if not (ROOT / rel / "SKILL.md").exists():
+            raise SystemExit(f"marketplace skill path missing: {rel}")
 
 html = (ROOT / "examples/mfg-procurement-to-assembly.html").read_text(encoding="utf-8")
 if "<!-        <g id=\"node-demand\"" in html:

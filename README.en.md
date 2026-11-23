@@ -23,24 +23,48 @@ python3 -m http.server 8792 --directory examples
 
 ## Installation
 
-### Codex
+### Cross-agent install (recommended)
+
+Use [`npx skills`](https://skills.sh). It symlinks by default: one canonical copy lives in `~/.agents/skills/<name>`, and Claude Code gets `~/.claude/skills/<name>` pointing to it.
 
 ```bash
-mkdir -p ~/.codex/skills/flow-builder
-curl -L https://raw.githubusercontent.com/tnt-likely/skills-lab/main/skills/flow-builder/SKILL.md \
-  -o ~/.codex/skills/flow-builder/SKILL.md
+# all skills -> Claude Code + Codex
+npx skills add TNT-Likely/skills-lab -g -a claude-code -a codex --skill '*' -y
+
+# one skill
+npx skills add TNT-Likely/skills-lab --skill flow-builder -g -a claude-code -a codex -y
+
+# after the repo updates (global install)
+npx skills update -g
 ```
 
-### Claude Code / Gemini CLI / other agents
+`--copy` switches to independent copies; update them with `npx skills update` too, not by reinstalling.
 
-Copy `skills/flow-builder/` into the runtime's skills directory, or add its `SKILL.md` to the agent's skill search path:
+### Claude Code plugin marketplace
+
+```text
+/plugin marketplace add TNT-Likely/skills-lab
+/plugin install flow-builder@skills-lab
+/plugin install portal-dashboard@skills-lab
+```
+
+Claude Code manages updates through `/plugin`; Claude Code users do not need `npx skills`.
+
+### Local development (link the repo)
 
 ```bash
 git clone https://github.com/tnt-likely/skills-lab.git
-cp -R skills-lab/skills/flow-builder ~/.agents/skills/flow-builder
+cd skills-lab
+./scripts/install.sh               # all skills -> ~/.agents/skills + ~/.claude/skills
+./scripts/install.sh flow-builder  # one skill
+./scripts/install.sh --copy        # independent copies
 ```
 
-Skill directories differ between runtimes. Keep the directory name `flow-builder` and the `SKILL.md` file. The root `SKILL.md` can also be loaded as a single-file skill.
+The working tree is the source: edits or `git pull` are picked up by the next agent session, with no update step. This is for local authoring; use `npx skills` or the plugin marketplace for distribution.
+
+- Symlink rather than hard link: a git pull or checkout replaces file inodes, which breaks hard links, and hard links cannot cover new `assets/` or `references/` files.
+- The installer refuses to overwrite an existing entry; check it and use `--force` if intended.
+- Multi-skill repos should not keep a root `SKILL.md`: when one exists, `npx skills` treats it as the only skill and ignores `skills/`. Every skill lives at `skills/<name>/SKILL.md`.
 
 ## Repository layout
 
@@ -48,7 +72,8 @@ Skill directories differ between runtimes. Keep the directory name `flow-builder
 skills-lab/
 ├── README.md
 ├── README.en.md
-├── SKILL.md
+├── .claude-plugin/
+│   └── marketplace.json
 ├── skills/
 │   ├── flow-builder/
 │   │   └── SKILL.md
@@ -62,6 +87,8 @@ skills-lab/
 │   ├── demo.gif
 │   └── mfg-procurement-to-assembly.html
 └── scripts/
+    ├── install.sh
+    └── validate.py
 ```
 
 ## Publishing rules

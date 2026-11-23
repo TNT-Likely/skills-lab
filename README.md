@@ -23,24 +23,48 @@ python3 -m http.server 8792 --directory examples
 
 ## 安装
 
-### Codex
+### 通用安装（推荐）
+
+跨 Agent 用 [`npx skills`](https://skills.sh)，默认软链：一份 canonical 副本在 `~/.agents/skills/<name>`，Claude Code 通过 `~/.claude/skills/<name>` 链过去。
 
 ```bash
-mkdir -p ~/.codex/skills/flow-builder
-curl -L https://raw.githubusercontent.com/tnt-likely/skills-lab/main/skills/flow-builder/SKILL.md \
-  -o ~/.codex/skills/flow-builder/SKILL.md
+# 全部技能 → Claude Code + Codex
+npx skills add TNT-Likely/skills-lab -g -a claude-code -a codex --skill '*' -y
+
+# 只装一个
+npx skills add TNT-Likely/skills-lab --skill flow-builder -g -a claude-code -a codex -y
+
+# 仓库更新后（全局安装）
+npx skills update -g
 ```
 
-### Claude Code / Gemini CLI / 通用 Agent
+`--copy` 可改为复制；复制模式同样用 `npx skills update` 同步，不是重新安装。
 
-把 `skills/flow-builder/` 复制到该 Agent 的 skills 目录，或直接把其中的 `SKILL.md` 加入 Agent 的技能搜索路径：
+### Claude Code 插件市场
+
+```text
+/plugin marketplace add TNT-Likely/skills-lab
+/plugin install flow-builder@skills-lab
+/plugin install portal-dashboard@skills-lab
+```
+
+由 Claude Code 的 `/plugin` 管理更新；Claude Code 用户不需要再跑 `npx skills`。
+
+### 本地开发（直链仓库）
 
 ```bash
 git clone https://github.com/tnt-likely/skills-lab.git
-cp -R skills-lab/skills/flow-builder ~/.agents/skills/flow-builder
+cd skills-lab
+./scripts/install.sh               # 全部技能 → ~/.agents/skills + ~/.claude/skills
+./scripts/install.sh flow-builder  # 只装一个
+./scripts/install.sh --copy        # 需要独立副本时
 ```
 
-不同运行时的技能目录可能不同；关键要求是保留目录名 `flow-builder` 和其中的 `SKILL.md`。根目录的 `SKILL.md` 也可直接作为单文件技能加载。
+工作树就是源：改文件或 `git pull` 后，新开 Agent 会话即生效，**不需要 update**。适合自己持续编辑；对外分发用上面的 `npx skills` 或插件市场。
+
+- 默认软链而不是硬链：git 拉取/切换会替换文件 inode，硬链会失效，也覆盖不了之后新增的 `assets/`、`references/`。
+- 同名目录已存在时脚本拒绝覆盖；确认后用 `--force`。
+- 多技能仓库不保留根 `SKILL.md`：`npx skills` 遇到根技能时只识别它、忽略 `skills/`。每个技能都在 `skills/<name>/SKILL.md`。
 
 ## 目录
 
@@ -48,7 +72,8 @@ cp -R skills-lab/skills/flow-builder ~/.agents/skills/flow-builder
 skills-lab/
 ├── README.md
 ├── README.en.md
-├── SKILL.md
+├── .claude-plugin/
+│   └── marketplace.json
 ├── skills/
 │   ├── flow-builder/
 │   │   └── SKILL.md
@@ -62,6 +87,8 @@ skills-lab/
 │   ├── demo.gif
 │   └── mfg-procurement-to-assembly.html
 └── scripts/
+    ├── install.sh
+    └── validate.py
 ```
 
 ## 发布约定
