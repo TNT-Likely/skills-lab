@@ -4,19 +4,10 @@
     "name": "TNT-Likely"
   },
   "metadata": {
-    "description": "Personal Agent Skills: flow-builder and portal-dashboard",
-    "version": "1.0.0"
+    "description": "Personal Agent Skills: portal-dashboard",
+    "version": "1.1.0"
   },
   "plugins": [
-    {
-      "name": "flow-builder",
-      "description": "Turn business flows, screenshots, HTML references, spreadsheets, or rough requirements into an interactive system prototype.",
-      "source": "./",
-      "strict": false,
-      "skills": [
-        "./skills/flow-builder"
-      ]
-    },
     {
       "name": "portal-dashboard",
       "description": "A docs-first portal visual system inspired by the Clash dashboard.",

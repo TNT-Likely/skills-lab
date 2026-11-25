@@ -31,7 +31,7 @@ skills-lab 更新后无需重新安装，新开 Agent 会话即可生效。
 
 示例:
   ./scripts/install.sh
-  ./scripts/install.sh flow-builder
+  ./scripts/install.sh portal-dashboard
   ./scripts/install.sh --copy --target ~/.agents/skills
 EOF
 }
